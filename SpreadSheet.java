@@ -8,7 +8,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -178,6 +180,20 @@ public class SpreadSheet {
 		return cellValue.replaceAll(tagRegex, "");
 	}
 	
+	Map<String,String> getAttributes(String tag){
+		String attrRegex = "\\w+\\s*=\\s*\"\\w+\"";
+		Pattern attrPattern = Pattern.compile(attrRegex);
+		Matcher tagMatcher = attrPattern.matcher(tag);
+		Map<String,String> attrMatches = new HashMap<String,String>();
+		while (tagMatcher.find()) {
+			String attr = tagMatcher.group();
+			String attrName = attr.substring(0, attr.indexOf('=')).trim();
+			String attrVal = attr.substring(attr.indexOf('"')+1, attr.indexOf('"',attr.indexOf('"')+1)).trim();
+			attrMatches.put(attrName, attrVal);
+		}
+		return attrMatches;
+	}
+	
 	private Cell setCellValue(Cell cell,Object obj) {
 		if(obj instanceof Date) {
 			cell.setCellValue(((Date)obj));
@@ -303,7 +319,7 @@ public class SpreadSheet {
 		row1.add("256D<POI-BOLD/>");
 		List<Object> row2 = new ArrayList<Object>();
 		row2.add(null);
-		row2.add("d2<POI-ITALIC/>");
+		row2.add("d2<poi-italic/>");
 		row2.add("h3<POI-BGCOLOR = \"Gold\"/>");
 		List<Object> row3 = new ArrayList<Object>();
 		List<Object> row4 = new ArrayList<Object>();
