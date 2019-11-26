@@ -8,16 +8,22 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
@@ -51,8 +57,9 @@ public class SpreadSheet {
 	private String fileExtensionName;
 	private int rowid;
 	private int cellid;
-
-	
+	private CreationHelper createHelper;
+	private CellStyle hyperlinkStyle;
+	private Font hyperlinkFont;
 	public int getRowid() {
 		return rowid;
 	}
@@ -79,6 +86,7 @@ public class SpreadSheet {
 		}
 		this.file = file;
 		createWorkbook();
+		setDefaults();
 	}
 	
 	private void createWorkbook() throws IOException {
@@ -108,10 +116,18 @@ public class SpreadSheet {
 				throw new IOException("Invalid file type");
 			}
 		}
-		
 		System.out.println("File successfully loaded : "+file.getAbsolutePath());
 	}
-
+	
+	private void setDefaults() {
+		createHelper = workbook.getCreationHelper();
+		hyperlinkStyle = workbook.createCellStyle();
+		hyperlinkFont = workbook.createFont();
+		hyperlinkFont.setUnderline(Font.U_SINGLE);
+		hyperlinkFont.setColor(IndexedColors.BLUE.getIndex());
+		hyperlinkStyle.setFont(hyperlinkFont);
+	}
+	
 	/**
 	 * @param sheetname - Sheet name to which data will be written. if sheet is present data will be overwritten, if not new sheet will be created
 	 * @param initRowId - row number from which data will be written, useful while making multiple write calls to same sheet.
@@ -153,6 +169,19 @@ public class SpreadSheet {
 		style = workbook.createCellStyle();
 		font = workbook.createFont();
 		for (String tag : tagMatches) {
+			if (tag.toUpperCase().matches("\\<POI-HYPERLINK.*\\>")) {
+				Map<String,String> attrs = getAttributes(tag.toUpperCase());
+				System.out.println(attrs.keySet().toString());
+				if(attrs.containsKey("TYPE") && attrs.containsKey("URL")) {
+					try {
+						Hyperlink link = createHelper.createHyperlink(HyperlinkType.valueOf(attrs.get("TYPE")));
+			            link.setAddress(attrs.get("URL"));
+			            cell.setCellStyle(hyperlinkStyle);
+			            cell.setHyperlink(link);
+			    		return cellValue.replaceAll(tagRegex, "");
+					}catch(IllegalArgumentException e) {}
+				}
+			}
 			if (tag.toUpperCase().equals("<POI-BOLD/>")) {
 				font.setBold(true);
 			}
@@ -165,6 +194,12 @@ public class SpreadSheet {
 			if (tag.toUpperCase().equals("<POI-UNDERLINE/>")) {
 				font.setUnderline(Font.U_SINGLE);
 			}
+			if (tag.toUpperCase().matches("\\<POI-FONTCOLOR\\s*=\\s*\"\\w+\".*/\\>")) {
+				try {
+					font.setColor(IndexedColors.valueOf(tag.substring(tag.indexOf('"')+1, tag.lastIndexOf('"')).toUpperCase()).index);
+				}catch(IllegalArgumentException e) {
+				}
+			}
 			style.setFont(font);
 			if (tag.toUpperCase().matches("\\<POI-BGCOLOR\\s*=\\s*\"\\w+\".*/\\>")) {
 				try {
@@ -173,9 +208,75 @@ public class SpreadSheet {
 				}catch(IllegalArgumentException e) {
 				}
 			}
+			if (tag.toUpperCase().matches("\\<POI-BORDER.*\\>")) {
+				Map<String,String> attrs = getAttributes(tag.toUpperCase());
+				if(attrs.containsKey("ALL")) {
+					try {
+						style.setBorderTop(BorderStyle.valueOf(attrs.get("ALL")));
+						style.setBorderRight(BorderStyle.valueOf(attrs.get("ALL")));
+						style.setBorderBottom(BorderStyle.valueOf(attrs.get("ALL")));
+						style.setBorderLeft(BorderStyle.valueOf(attrs.get("ALL")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("TOP")) {
+					try {
+						style.setBorderTop(BorderStyle.valueOf(attrs.get("TOP")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("LEFT")) {
+					try {
+						style.setBorderLeft(BorderStyle.valueOf(attrs.get("LEFT")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("BOTTOM")) {
+					try {
+						style.setBorderBottom(BorderStyle.valueOf(attrs.get("BOTTOM")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("RIGHT")) {
+					try {
+						style.setBorderRight(BorderStyle.valueOf(attrs.get("RIGHT")));
+					}catch(IllegalArgumentException e) {}
+				}
+				
+				if(attrs.containsKey("COLOR")) {
+					try {
+						style.setTopBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+						style.setRightBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+						style.setBottomBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+						style.setLeftBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_TOP")) {
+					try {
+						style.setTopBorderColor(IndexedColors.valueOf(attrs.get("COLOR_TOP")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_RIGHT")) {
+					try {
+						style.setRightBorderColor(IndexedColors.valueOf(attrs.get("COLOR_RIGHT")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_BOTTOM")) {
+					try {
+						style.setBottomBorderColor(IndexedColors.valueOf(attrs.get("COLOR_BOTTOM")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_LEFT")) {
+					try {
+						style.setLeftBorderColor(IndexedColors.valueOf(attrs.get("COLOR_LEFT")).index);
+					}catch(IllegalArgumentException e) {}
+				}
+			}
 		}
 		cell.setCellStyle(style);
 		return cellValue.replaceAll(tagRegex, "");
+	}
+	
+	private Map<String,String> getAttributes(String tag){
+		String attrRegex = "\\w+\\s*=\\s*\".+?\"";
+		Pattern attrPattern = Pattern.compile(attrRegex);
+		Matcher tagMatcher = attrPattern.matcher(tag);
+		Map<String,String> attrMatches = new HashMap<String,String>();
+		while (tagMatcher.find()) {
+			String attr = tagMatcher.group();
+			String attrName = attr.substring(0, attr.indexOf('=')).trim();
+			String attrVal = attr.substring(attr.indexOf('"')+1, attr.indexOf('"',attr.indexOf('"')+1)).trim();
+			attrMatches.put(attrName, attrVal);
+		}
+		return attrMatches;
 	}
 	
 	private Cell setCellValue(Cell cell,Object obj) {
@@ -303,20 +404,27 @@ public class SpreadSheet {
 		row1.add("256D<POI-BOLD/>");
 		List<Object> row2 = new ArrayList<Object>();
 		row2.add(null);
-		row2.add("d2<POI-ITALIC/>");
+		row2.add("d2<poi-italic/>");
 		row2.add("h3<POI-BGCOLOR = \"Gold\"/>");
 		List<Object> row3 = new ArrayList<Object>();
 		List<Object> row4 = new ArrayList<Object>();
-		row4.add(true);
-		row4.add(256);
+		row4.add("true<POI-BORDER ALL=\"MEDIUM_DASHED\" COLOR=\"TEAL\"/>");
+		row4.add("256<POI-FONTCOLOR=\"Green\"/><POI-BGCOLOR=\"LIGHT_Green\"/>");
 		row4.add("1997-11-25<POI-BOLD/>");
 		row4.add(new SimpleDateFormat("yyyy-MM-dd").parse("1997-05-17"));
+		
+		List<Object> row5 = new ArrayList<Object>();
+		row5.add("true<POI-BORDER ALL=\"MEDIUM_DASHED\" COLOR=\"TEAL\"/>");
+		row5.add("pushkar97<POI-HYPERLINK TYPE=\"URL\" URL=\"https://github.com/pushkar97\" />");
+		row5.add("1997-11-25<POI-BOLD/>");
+		row5.add(new SimpleDateFormat("yyyy-MM-dd").parse("1997-05-17"));
 		data.add(row1);
 		data.add(null);
 		data.add(row2);
 		data.add(row3);
 		data.add(row4);
 		data.add(row4);
+		data.add(row5);
 		sheet.writeData("dataWriteTest", 0, 0, data);
 		sheet.saveWorkbook();
 		sheet.closeWorkbook();
