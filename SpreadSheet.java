@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -167,12 +168,70 @@ public class SpreadSheet {
 			if (tag.toUpperCase().equals("<POI-UNDERLINE/>")) {
 				font.setUnderline(Font.U_SINGLE);
 			}
+			if (tag.toUpperCase().matches("\\<POI-FONTCOLOR\\s*=\\s*\"\\w+\".*/\\>")) {
+				try {
+					font.setColor(IndexedColors.valueOf(tag.substring(tag.indexOf('"')+1, tag.lastIndexOf('"')).toUpperCase()).index);
+				}catch(IllegalArgumentException e) {
+				}
+			}
 			style.setFont(font);
 			if (tag.toUpperCase().matches("\\<POI-BGCOLOR\\s*=\\s*\"\\w+\".*/\\>")) {
 				try {
 					style.setFillForegroundColor(IndexedColors.valueOf(tag.substring(tag.indexOf('"')+1, tag.lastIndexOf('"')).toUpperCase()).index);
 					style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 				}catch(IllegalArgumentException e) {
+				}
+			}
+			if (tag.toUpperCase().matches("\\<POI-BORDER.*\\>")) {
+				Map<String,String> attrs = getAttributes(tag.toUpperCase());
+				if(attrs.containsKey("ALL")) {
+					try {
+						style.setBorderTop(BorderStyle.valueOf(attrs.get("ALL")));
+						style.setBorderRight(BorderStyle.valueOf(attrs.get("ALL")));
+						style.setBorderBottom(BorderStyle.valueOf(attrs.get("ALL")));
+						style.setBorderLeft(BorderStyle.valueOf(attrs.get("ALL")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("TOP")) {
+					try {
+						style.setBorderTop(BorderStyle.valueOf(attrs.get("TOP")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("LEFT")) {
+					try {
+						style.setBorderLeft(BorderStyle.valueOf(attrs.get("LEFT")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("BOTTOM")) {
+					try {
+						style.setBorderBottom(BorderStyle.valueOf(attrs.get("BOTTOM")));
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("RIGHT")) {
+					try {
+						style.setBorderRight(BorderStyle.valueOf(attrs.get("RIGHT")));
+					}catch(IllegalArgumentException e) {}
+				}
+				
+				if(attrs.containsKey("COLOR")) {
+					try {
+						style.setTopBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+						style.setRightBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+						style.setBottomBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+						style.setLeftBorderColor(IndexedColors.valueOf(attrs.get("COLOR")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_TOP")) {
+					try {
+						style.setTopBorderColor(IndexedColors.valueOf(attrs.get("COLOR_TOP")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_RIGHT")) {
+					try {
+						style.setRightBorderColor(IndexedColors.valueOf(attrs.get("COLOR_RIGHT")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_BOTTOM")) {
+					try {
+						style.setBottomBorderColor(IndexedColors.valueOf(attrs.get("COLOR_BOTTOM")).index);
+					}catch(IllegalArgumentException e) {}
+				}else if(attrs.containsKey("COLOR_LEFT")) {
+					try {
+						style.setLeftBorderColor(IndexedColors.valueOf(attrs.get("COLOR_LEFT")).index);
+					}catch(IllegalArgumentException e) {}
 				}
 			}
 		}
@@ -323,8 +382,8 @@ public class SpreadSheet {
 		row2.add("h3<POI-BGCOLOR = \"Gold\"/>");
 		List<Object> row3 = new ArrayList<Object>();
 		List<Object> row4 = new ArrayList<Object>();
-		row4.add(true);
-		row4.add(256);
+		row4.add("true<POI-BORDER ALL=\"THICK\" COLOR=\"RED\"/>");
+		row4.add("256<POI-FONTCOLOR=\"RED\"/>");
 		row4.add("1997-11-25<POI-BOLD/>");
 		row4.add(new SimpleDateFormat("yyyy-MM-dd").parse("1997-05-17"));
 		data.add(row1);
