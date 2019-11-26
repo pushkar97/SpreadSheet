@@ -12,7 +12,7 @@ Append followning tags to data in each cell for styling.</br>
   <li><B>&lt;POI-UNDERLINE/&gt;</B> : Adds <ins>underline</ins> style to cell</li>
   <li><B>&lt;POI-BGCOLOR="&lt;IndexedColor&gt;"/&gt;</B> : Sets background color for cell with specified IndexedColor</li>
   <li><B>&lt;POI-FONTCOLOR="&lt;IndexedColor&gt;"/&gt;</B> : Sets Font color for cell with specified IndexedColor</li>
-  <li><b>&lt;POI-BORDER [ALL|TOP,LEFT,RIGHT,BOTTOM]="&lt;BorderStyle&gt;" [COLOR|COLOR_TOP,COLOR_LEFT,COLOR_RIGHT,COLOR_BOTTOM]="&lt;IndexedColors&gt;"/&gt;</b> adds border style to cell</li>
+  <li><b>&lt;POI-BORDER [ALL | TOP, LEFT, RIGHT, BOTTOM]="&lt;BorderStyle&gt;" [COLOR | COLOR_TOP, COLOR_LEFT, COLOR_RIGHT, COLOR_BOTTOM]="&lt;IndexedColors&gt;"/&gt;</b> adds border style to cell</li>
   <li><b>&lt;POI-HYPERLINK TYPE="&lt;HyperlinkType&gt;" URL="&lt;hyperlink&gt;"/&gt;</b></li>
 </ul>
 
