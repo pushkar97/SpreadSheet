@@ -1,5 +1,5 @@
 # SpreadSheet
-Apache POI based convenience class for creating excel spreadsheets
+Apache POI based convenience class for creating & reading excel spreadsheets
 
 It Supports reading and writing data to .xls and .xlsx files
 
